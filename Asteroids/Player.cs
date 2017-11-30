@@ -11,7 +11,7 @@ namespace Asteroids {
         public float Damage { get; set; }
         public float Health { get; set; }
         public float HealthMax { get; set; }
-        
+
         public Player() {
             
         }
