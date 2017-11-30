@@ -77,6 +77,8 @@ namespace Asteroids
 
             // TODO: Add your drawing code here
 
+            spriteBatch.Draw()
+
             base.Draw(gameTime);
         }
     }
