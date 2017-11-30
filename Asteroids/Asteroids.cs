@@ -1,6 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System;
+using System.Collections.Generic;
 
 namespace Asteroids
 {
@@ -11,6 +13,12 @@ namespace Asteroids
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
+
+        Vector2 VPHalfSize;
+
+        Effect normalMappedSprite;
+
+        Player player;
         
         public Asteroids()
         {
@@ -28,6 +36,13 @@ namespace Asteroids
         {
             // TODO: Add your initialization logic here
 
+            player = new Player();
+
+            Mouse.SetCursor(MouseCursor.Crosshair);
+            IsMouseVisible = true;
+
+            VPHalfSize = GraphicsDevice.Viewport.Bounds.Size.ToVector2() / 2f;
+
             base.Initialize();
         }
 
@@ -40,7 +55,10 @@ namespace Asteroids
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            // TODO: use this.Content to load your game content here
+            player.Sprite = Content.Load<Texture2D>("Entities/ship_diffuse");
+            player.SpriteNormal = Content.Load<Texture2D>("Entities/ship_normal");
+
+            normalMappedSprite = Content.Load<Effect>("Effects/NormalMappedSprite");
         }
 
         /// <summary>
@@ -76,8 +94,18 @@ namespace Asteroids
             GraphicsDevice.Clear(Color.Black);
 
             // TODO: Add your drawing code here
+            
+            Vector2 mousepos = Mouse.GetState().Position.ToVector2() - VPHalfSize;
+            Vector2 drawpos = player.Position + VPHalfSize;
 
-            //spriteBatch.Draw()
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.Default, RasterizerState.CullNone, normalMappedSprite);
+            normalMappedSprite.Parameters["NormalTexture"]?.SetValue(player.SpriteNormal);
+            normalMappedSprite.Parameters["WorldPosition"]?.SetValue(player.Position);
+            normalMappedSprite.Parameters["LightRadius"]?.SetValue(10f);
+            normalMappedSprite.Parameters["LightColor"]?.SetValue(new Vector3(1f, 0.4f, 0.2f));
+            normalMappedSprite.Parameters["LightPosition"]?.SetValue(new Vector3(mousepos, 10f));
+            spriteBatch.Draw(player.Sprite, drawpos, null, Color.White, player.Rotation, player.Sprite.Bounds.Size.ToVector2() / 2f, 1f, SpriteEffects.None, 0f);
+            spriteBatch.End();
 
             base.Draw(gameTime);
         }
