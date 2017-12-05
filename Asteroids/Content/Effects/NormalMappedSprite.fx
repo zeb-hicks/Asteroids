@@ -28,12 +28,21 @@ struct VertexShaderOutput
 	float2 TextureCoordinates : TEXCOORD0;
 };
 
+float4 UnpackNormal(sampler2D normal, float2 uv) {
+	return normalize(tex2D(normal, uv) - float4(0.5, 0.5, 0.5, 0.0)) * float4(1.0, -1.0, 1.0, 1.0);
+}
+
+float NormalMapLight(float3 normal, float3 light, float3 lightcolor) {
+
+}
+
 float4 MainPS(VertexShaderOutput input) : COLOR
 {
 	float factor = 1.0 / 32.0;
 	float4 diff = tex2D(SpriteTextureSampler, input.TextureCoordinates);
-	float4 norm = normalize(tex2D(NormalTextureSampler, input.TextureCoordinates) - 0.5) * float4(1.0, -1.0, 1.0, 1.0);
-	float light = max(dot(norm.xyz, LightPosition * factor), 1.0 - norm.a);
+	float4 norm = UnpackNormal(NormalTextureSampler, input.TextureCoordinates);
+	float3 lpos = LightPosition;
+	float light = max(dot(norm.xyz, lpos * factor), 1.0 - norm.a);
 	float dist = distance(input.TextureCoordinates.xy * 2.0 - 1.0, LightPosition.xy * factor);
 	//light = min(light / dist * LightRadius, 1.0);
 	light = light / dist * LightRadius;
