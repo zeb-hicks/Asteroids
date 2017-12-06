@@ -15,5 +15,24 @@ namespace Asteroids {
         public Player() {
             
         }
+
+        public void Draw(SpriteBatch sb, Matrix iCameraMatrix) {
+            Vector2 pos = Vector2.Transform(Position, iCameraMatrix);
+            //Rectangle dst = new Rectangle(new Point((int)(pos.X + Sprite.Bounds.Width / 2f), (int)(pos.Y + Sprite.Bounds.Height / 2f)), Sprite.Bounds.Size);
+            Rectangle dst = Sprite.Bounds;
+            dst.Offset(pos);
+            Rectangle src = Sprite.Bounds;
+            Vector2 origin = Sprite.Bounds.Size.ToVector2() / 2;
+            float rotation = Rotation + iCameraMatrix.Rotation.Z;
+            Color color = Color.White;
+
+            Effect ef = GameEffects.Effects["NormalMappedSprite"];
+
+            ef.Parameters["NormalTexture"]?.SetValue(SpriteNormal);
+
+            sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null, ef, null);
+            sb.Draw(Sprite, dst, src, color, rotation, origin, SpriteEffects.None, 0f);
+            sb.End();
+        }
     }
 }

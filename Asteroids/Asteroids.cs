@@ -24,6 +24,11 @@ namespace Asteroids
         Texture2D particles_n;
 
         RenderTargetBinding[] ZBuffer;
+        RenderTarget2D[] ZBufferTargets;
+
+        RenderTarget2D OutputTarget;
+
+        float vw, vh;
 
         public Asteroids()
         {
@@ -63,15 +68,22 @@ namespace Asteroids
             player.Sprite = Content.Load<Texture2D>("Entities/ship_diffuse");
             player.SpriteNormal = Content.Load<Texture2D>("Entities/ship_normal");
 
+            player.Position = new Vector2(GraphicsDevice.Viewport.Width / 4, GraphicsDevice.Viewport.Height / 4);
+
             particles_d = Content.Load<Texture2D>("Particles/particles_diffuse");
             particles_n = Content.Load<Texture2D>("Particles/particles_normal");
 
-            normalMappedSprite = Content.Load<Effect>("Effects/NormalMappedSprite");
+            GameEffects.Effects.Add("NormalMappedSprite", Content.Load<Effect>("Effects/NormalMappedSprite"));
 
             ZBuffer = new RenderTargetBinding[2];
+            ZBufferTargets = new RenderTarget2D[2];
 
-            ZBuffer[0] = new RenderTargetBinding(new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height)); // Diffuse
-            ZBuffer[1] = new RenderTargetBinding(new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height)); // Normal
+            ZBufferTargets[0] = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2); // Diffuse
+            ZBufferTargets[1] = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2); // Normal
+            ZBuffer[0] = new RenderTargetBinding(ZBufferTargets[0]); // Diffuse
+            ZBuffer[1] = new RenderTargetBinding(ZBufferTargets[1]); // Normal
+
+            OutputTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2);
         }
 
         /// <summary>
@@ -111,31 +123,30 @@ namespace Asteroids
             Vector2 mousepos = Mouse.GetState().Position.ToVector2() - VPHalfSize;
             Vector2 drawpos = player.Position + VPHalfSize;
 
-            normalMappedSprite.Parameters["WorldPosition"]?.SetValue(player.Position);
-            normalMappedSprite.Parameters["LightRadius"]?.SetValue(3f);
-            //normalMappedSprite.Parameters["LightColor"]?.SetValue(new Vector3(1f, 0.4f, 0.2f));
-            normalMappedSprite.Parameters["LightColor"]?.SetValue(new Vector3(1f, 1f, 1f));
-            normalMappedSprite.Parameters["LightPosition"]?.SetValue(new Vector3(mousepos - player.Position, 12f));
+            GraphicsDevice.SetRenderTargets(ZBuffer);
 
-            //GraphicsDevice.SetRenderTargets(ZBuffer);
+            player.Draw(spriteBatch, Matrix.Identity);
+            
+            DrawQuad(ZBufferTargets[0], 0.0f, 0.0f, 0.5f, 0.5f, OutputTarget);
+            DrawQuad(ZBufferTargets[1], 0.5f, 0.0f, 0.5f, 0.5f, OutputTarget);
 
-            normalMappedSprite.Parameters["NormalTexture"]?.SetValue(particles_n);
-            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.Default, RasterizerState.CullNone, normalMappedSprite);
-            spriteBatch.Draw(particles_d, drawpos, null, Color.White, player.Rotation, player.Sprite.Bounds.Size.ToVector2() / 2f, 1f, SpriteEffects.None, 0f);
-            spriteBatch.End();
-            normalMappedSprite.Parameters["NormalTexture"]?.SetValue(player.SpriteNormal);
-            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.Default, RasterizerState.CullNone, normalMappedSprite);
-            normalMappedSprite.Parameters["LightPosition"]?.SetValue(new Vector3(mousepos - player.Position - new Vector2(64f, 32f), 12f));
-            spriteBatch.Draw(player.Sprite, drawpos + new Vector2(64f, 32f), null, Color.White, player.Rotation, player.Sprite.Bounds.Size.ToVector2() / 2f, 1f, SpriteEffects.None, 0f);
-            spriteBatch.End();
-            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.Default, RasterizerState.CullNone, normalMappedSprite);
-            normalMappedSprite.Parameters["LightPosition"]?.SetValue(new Vector3(mousepos - player.Position + new Vector2(64f, 32f), 12f));
-            spriteBatch.Draw(player.Sprite, drawpos - new Vector2(64f, 32f), null, Color.White, player.Rotation, player.Sprite.Bounds.Size.ToVector2() / 2f, 1f, SpriteEffects.None, 0f);
-            spriteBatch.End();
+            DrawQuad(OutputTarget);
 
             base.Draw(gameTime);
+        }
 
-            Vector2 v = new Vector2(0f, 0f);
+        void DrawQuad(Texture2D tex, float x = 0f, float y = 0f, float w = 1f, float h = 1f, RenderTarget2D target = null) {
+            int rx = (int)(x * vw);
+            int ry = (int)(y * vh);
+            int rw = (int)(w * vw);
+            int rh = (int)(h * vh);
+            Rectangle rect = new Rectangle(rx, ry, rw, rh);
+
+            GraphicsDevice.SetRenderTarget(target);
+
+            spriteBatch.Begin();
+            spriteBatch.Draw(tex, rect, Color.White);
+            spriteBatch.End();
         }
     }
 }

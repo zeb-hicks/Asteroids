@@ -21,11 +21,15 @@ sampler2D NormalTextureSampler = sampler_state {
 	Texture = <NormalTexture>;
 };
 
-struct VertexShaderOutput
-{
+struct VertexShaderOutput {
 	float4 Position : SV_POSITION;
 	float4 Color : COLOR0;
 	float2 TextureCoordinates : TEXCOORD0;
+};
+
+struct PixelShaderOutput {
+	float4 Color0 : COLOR0;
+	float4 Color1 : COLOR1;
 };
 
 float4 UnpackNormal(sampler2D normal, float2 uv) {
@@ -36,17 +40,11 @@ float NormalMapLight(float3 normal, float3 light, float3 lightcolor) {
 
 }
 
-float4 MainPS(VertexShaderOutput input) : COLOR
-{
-	float factor = 1.0 / 32.0;
-	float4 diff = tex2D(SpriteTextureSampler, input.TextureCoordinates);
-	float4 norm = UnpackNormal(NormalTextureSampler, input.TextureCoordinates);
-	float3 lpos = LightPosition;
-	float light = max(dot(norm.xyz, lpos * factor), 1.0 - norm.a);
-	float dist = distance(input.TextureCoordinates.xy * 2.0 - 1.0, LightPosition.xy * factor);
-	//light = min(light / dist * LightRadius, 1.0);
-	light = light / dist * LightRadius;
-	return diff * light * float4(LightColor, 1.0) * input.Color;
+PixelShaderOutput MainPS(VertexShaderOutput input) {
+	PixelShaderOutput o;
+	o.Color0 = tex2D(SpriteTextureSampler, input.TextureCoordinates);;
+	o.Color1 = tex2D(NormalTextureSampler, input.TextureCoordinates);;
+	return o;
 }
 
 technique SpriteDrawing
