@@ -45,6 +45,7 @@
     <Compile Include="Asteroids.cs" />
     <Compile Include="Class1.cs" />
     <Compile Include="Entity.cs" />
+    <Compile Include="MusicController.cs" />
     <Compile Include="Particle.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="Program.cs" />

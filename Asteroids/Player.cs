@@ -16,14 +16,14 @@ namespace Asteroids {
             
         }
 
-        public void Draw(SpriteBatch sb, Matrix iCameraMatrix) {
-            Vector2 pos = Vector2.Transform(Position, iCameraMatrix);
+        public void Draw(SpriteBatch sb, Matrix mCamera) {
+            Vector2 pos = Vector2.Transform(Position, mCamera);
             //Rectangle dst = new Rectangle(new Point((int)(pos.X + Sprite.Bounds.Width / 2f), (int)(pos.Y + Sprite.Bounds.Height / 2f)), Sprite.Bounds.Size);
             Rectangle dst = Sprite.Bounds;
             dst.Offset(pos);
             Rectangle src = Sprite.Bounds;
             Vector2 origin = Sprite.Bounds.Size.ToVector2() / 2;
-            float rotation = Rotation + iCameraMatrix.Rotation.Z;
+            float rotation = Rotation + mCamera.Rotation.Z;
             Color color = Color.White;
 
             Effect ef = GameEffects.Effects["NormalMappedSprite"];

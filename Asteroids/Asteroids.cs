@@ -15,10 +15,13 @@ namespace Asteroids
         SpriteBatch spriteBatch;
 
         Vector2 VPHalfSize;
+        int vw, vh;
 
         Effect normalMappedSprite;
 
         Player player;
+
+        Matrix cameraMatrix;
 
         Texture2D particles_d;
         Texture2D particles_n;
@@ -27,8 +30,6 @@ namespace Asteroids
         RenderTarget2D[] ZBufferTargets;
 
         RenderTarget2D OutputTarget;
-
-        float vw, vh;
 
         public Asteroids()
         {
@@ -68,8 +69,6 @@ namespace Asteroids
             player.Sprite = Content.Load<Texture2D>("Entities/ship_diffuse");
             player.SpriteNormal = Content.Load<Texture2D>("Entities/ship_normal");
 
-            player.Position = new Vector2(GraphicsDevice.Viewport.Width / 4, GraphicsDevice.Viewport.Height / 4);
-
             particles_d = Content.Load<Texture2D>("Particles/particles_diffuse");
             particles_n = Content.Load<Texture2D>("Particles/particles_normal");
 
@@ -78,12 +77,22 @@ namespace Asteroids
             ZBuffer = new RenderTargetBinding[2];
             ZBufferTargets = new RenderTarget2D[2];
 
-            ZBufferTargets[0] = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2); // Diffuse
-            ZBufferTargets[1] = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2); // Normal
+            vw = GraphicsDevice.Viewport.Width;
+            vh = GraphicsDevice.Viewport.Height;
+
+            cameraMatrix = Matrix.Identity;
+            cameraMatrix.Translation = new Vector3(vw / 4, vh / 4, 0);
+
+            ZBufferTargets[0] = new RenderTarget2D(GraphicsDevice, vw / 2, vh / 2); // Diffuse
+            ZBufferTargets[1] = new RenderTarget2D(GraphicsDevice, vw / 2, vh / 2); // Normal
             ZBuffer[0] = new RenderTargetBinding(ZBufferTargets[0]); // Diffuse
             ZBuffer[1] = new RenderTargetBinding(ZBufferTargets[1]); // Normal
 
-            OutputTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2);
+            OutputTarget = new RenderTarget2D(GraphicsDevice, vw, vh);
+
+            //MusicController.LoadMusic(Content);
+
+            //MusicController.PlayMusic();
         }
 
         /// <summary>
@@ -102,10 +111,27 @@ namespace Asteroids
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            GamePadState gp = GamePad.GetState(PlayerIndex.One);
+            KeyboardState kb = Keyboard.GetState();
+
+            if (gp.Buttons.Back == ButtonState.Pressed || kb.IsKeyDown(Keys.Escape))
                 Exit();
 
-            // TODO: Add your update logic here
+            Vector2 iv = new Vector2(0f, 0f);
+            if (kb.IsKeyDown(Keys.A)) iv.X -= 1f;
+            if (kb.IsKeyDown(Keys.D)) iv.X += 1f;
+            if (kb.IsKeyDown(Keys.W)) iv.Y -= 1f;
+            if (kb.IsKeyDown(Keys.S)) iv.Y += 1f;
+
+            if (gp.IsConnected) {
+                iv = new Vector2(gp.ThumbSticks.Left.X, -gp.ThumbSticks.Left.Y);
+            }
+
+            if (iv.Length() > 1) {
+                iv.Normalize();
+            }
+
+            player.Position += iv * 240f * (float)gameTime.ElapsedGameTime.TotalSeconds;
 
             base.Update(gameTime);
         }
@@ -125,7 +151,7 @@ namespace Asteroids
 
             GraphicsDevice.SetRenderTargets(ZBuffer);
 
-            player.Draw(spriteBatch, Matrix.Identity);
+            player.Draw(spriteBatch, cameraMatrix);
             
             DrawQuad(ZBufferTargets[0], 0.0f, 0.0f, 0.5f, 0.5f, OutputTarget);
             DrawQuad(ZBufferTargets[1], 0.5f, 0.0f, 0.5f, 0.5f, OutputTarget);
@@ -141,7 +167,37 @@ namespace Asteroids
             int rw = (int)(w * vw);
             int rh = (int)(h * vh);
             Rectangle rect = new Rectangle(rx, ry, rw, rh);
+            
+            GraphicsDevice.SetRenderTarget(target);
 
+            spriteBatch.Begin();
+            spriteBatch.Draw(tex, rect, Color.White);
+            spriteBatch.End();
+        }
+        void DrawQuad(Texture2D tex, Rectangle rect, RenderTarget2D target = null) {
+            Rectangle r = new Rectangle(rect.X * vw, rect.Y * vh, rect.Width * vw, rect.Height * vh);
+
+            GraphicsDevice.SetRenderTarget(target);
+
+            spriteBatch.Begin();
+            spriteBatch.Draw(tex, r, Color.White);
+            spriteBatch.End();
+        }
+
+        void DrawQuadi(Texture2D tex, int x, int y, int w, int h, RenderTarget2D target = null) {
+            int rx = x;
+            int ry = y;
+            int rw = w;
+            int rh = h;
+            Rectangle rect = new Rectangle(rx, ry, rw, rh);
+
+            GraphicsDevice.SetRenderTarget(target);
+
+            spriteBatch.Begin();
+            spriteBatch.Draw(tex, rect, Color.White);
+            spriteBatch.End();
+        }
+        void DrawQuadi(Texture2D tex, Rectangle rect, RenderTarget2D target = null) {
             GraphicsDevice.SetRenderTarget(target);
 
             spriteBatch.Begin();
